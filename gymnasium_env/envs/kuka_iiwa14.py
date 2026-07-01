@@ -1,0 +1,180 @@
+from enum import Enum
+from pathlib import Path
+
+import numpy as np
+from gymnasium import spaces
+from gymnasium.envs.mujoco import MujocoEnv
+
+
+class Actions(Enum):
+    JOINT_1 = 0
+    JOINT_2 = 1
+    JOINT_3 = 2
+    JOINT_4 = 3
+    JOINT_5 = 4
+    JOINT_6 = 5
+    JOINT_7 = 6
+
+
+class KukaIiwa14Env(MujocoEnv):
+
+    metadata = {
+        "render_modes": [
+            "human",
+            "rgb_array",
+            "depth_array",
+        ],
+        "render_fps": 500,
+    }
+
+    def __init__(self, render_mode=None, reward_type="dense"):
+
+        project_root = Path(__file__).resolve().parents[3]
+
+        model_path = (
+            project_root
+            / "shared"
+            / "models"
+            / "kuka_iiwa14_scene.xml"
+        )
+
+        self.n_joints = 7
+
+        self.EEF_SITE_ID = 2
+        self.TARGET_SITE_ID = 0
+
+        observation_space = spaces.Box(
+            low=-np.inf,
+            high=np.inf,
+            shape=(27,),
+            dtype=np.float64,
+        )
+
+        self.reward_type = reward_type
+
+        super().__init__(
+            model_path=str(model_path),
+            frame_skip=1,
+            observation_space=observation_space,
+            render_mode=render_mode,
+            default_camera_config=None,
+            width=1280,
+            height=720,
+        )
+
+    # --------------------------------------------------
+    # Observation
+    # --------------------------------------------------
+
+    def _get_obs(self):
+
+        qpos = self.data.qpos[: self.n_joints]
+        qvel = self.data.qvel[: self.n_joints]
+        qacc = self.data.qacc[: self.n_joints]
+
+        eef = self.data.site_xpos[self.EEF_SITE_ID]
+        target = self.data.site_xpos[self.TARGET_SITE_ID]
+
+        return np.concatenate(
+            [
+                qpos,
+                qvel,
+                qacc,
+                eef,
+                target,
+            ]
+        ).astype(np.float64)
+
+    def _get_info(self):
+
+        return {
+            "joint_positions": self.data.qpos[: self.n_joints].copy(),
+            "joint_velocities": self.data.qvel[: self.n_joints].copy(),
+            "joint_accelerations": self.data.qacc[: self.n_joints].copy(),
+            "end_effector_position": self.data.site_xpos[self.EEF_SITE_ID].copy(),
+            "target_position": self.data.site_xpos[self.TARGET_SITE_ID].copy(),
+        }
+
+    # --------------------------------------------------
+    # Reset
+    # --------------------------------------------------
+
+    def reset_model(self):
+
+        """
+        Called automatically by MujocoEnv.reset().
+        """
+
+        qpos = self.init_qpos.copy()
+        qvel = self.init_qvel.copy()
+
+        # Future:
+        # qpos += self.np_random.uniform(...)
+        # target randomization
+        # object randomization
+
+        self.set_state(qpos, qvel)
+
+        return self._get_obs()
+
+    # --------------------------------------------------
+    # Step
+    # --------------------------------------------------
+
+    def step(self, action):
+
+        # action = np.clip(
+        #     action,
+        #     self.action_space.low,
+        #     self.action_space.high,
+        # )
+
+        # normalized action space
+        action = np.clip(
+            action,
+            -1,
+            1,
+        )
+
+        self.do_simulation(action, self.frame_skip)
+
+        observation = self._get_obs()
+
+        reward = self.reward(observation)
+
+        terminated = False
+
+        truncated = False
+
+        info = self._get_info()
+
+        if self.render_mode == "human":
+            self.render()
+
+        return (
+            observation,
+            reward,
+            terminated,
+            truncated,
+            info,
+        )
+    
+    def reward(self, obs):
+        """
+        Compute the reward for the current state and action.
+        """
+
+        if self.reward_type == "sparse":
+            # Sparse reward: +1 if the end-effector is within a threshold distance of the target, else 0
+            eef_pos = obs[14:17]  # End-effector position
+            target_pos = obs[17:20]  # Target position
+            distance = np.linalg.norm(eef_pos - target_pos)
+            return 1.0 if distance == 0.0 else 0.0
+        
+        elif self.reward_type == "dense":
+            # Dense reward: negative distance between end-effector and target
+            eef_pos = obs[14:17]  # End-effector position
+            target_pos = obs[17:20]  # Target position
+            distance = np.linalg.norm(eef_pos - target_pos)
+            return (1-distance)
+        
