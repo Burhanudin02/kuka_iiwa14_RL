@@ -29,12 +29,11 @@ class KukaIiwa14Env(MujocoEnv):
 
     def __init__(self, render_mode=None, reward_type="dense"):
 
-        project_root = Path(__file__).resolve().parents[3]
+        project_root = Path(__file__).resolve().parents[2]
 
         model_path = (
             project_root
-            / "shared"
-            / "models"
+            / "mjcf"
             / "kuka_iiwa14_scene.xml"
         )
 
@@ -148,6 +147,8 @@ class KukaIiwa14Env(MujocoEnv):
 
         info = self._get_info()
 
+        self.randomize_trg_pos(observation)
+
         if self.render_mode == "human":
             self.render()
 
@@ -178,3 +179,35 @@ class KukaIiwa14Env(MujocoEnv):
             distance = np.linalg.norm(eef_pos - target_pos)
             return (1-distance)
         
+    def randomize_trg_pos(self, obs):
+        """
+        Randomize the target position within a specified range.
+        """
+
+        eef_pos = obs[14:17]  # End-effector position
+        target_pos = obs[17:20]  # Target position
+
+        if eef_pos == target_pos:
+        
+          # Define the range for randomization
+          new_x_pos = np.random.uniform(0.5, 0.8)
+          new_y_pos = np.random.uniform(0.5, 0.8)
+          new_z_pos = np.random.uniform(0.1, 1.0)
+  
+          # Assign the new target position data for observation
+          new_target_pos = np.array([
+              new_x_pos,
+              new_y_pos,
+              new_z_pos
+          ])
+
+          # Assign the new target site position for visualization
+          target_site_pos = np.array([
+              new_x_pos,
+              new_y_pos,
+              new_z_pos
+          ])
+  
+          # Set the new target position in the simulation
+          self.data.site_xpos[self.TARGET_SITE_ID] = new_target_pos
+          self.model.site_pos[self.TARGET_SITE_ID] = target_site_pos
