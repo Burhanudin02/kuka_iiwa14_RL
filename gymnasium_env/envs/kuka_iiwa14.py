@@ -27,7 +27,12 @@ class KukaIiwa14Env(MujocoEnv):
         "render_fps": 500,
     }
 
-    def __init__(self, render_mode=None, reward_type="dense"):
+    def __init__(
+            self, 
+            render_mode=None, 
+            reward_type="dense", 
+            episode_len=1024
+            ):
 
         project_root = Path(__file__).resolve().parents[2]
 
@@ -41,6 +46,9 @@ class KukaIiwa14Env(MujocoEnv):
 
         self.EEF_SITE_ID = 2
         self.TARGET_SITE_ID = 0
+
+        self.step_count = 0
+        self.max_steps = episode_len
 
         observation_space = spaces.Box(
             low=-np.inf,
@@ -104,13 +112,33 @@ class KukaIiwa14Env(MujocoEnv):
         Called automatically by MujocoEnv.reset().
         """
 
+        self.step_count = 0
+
         qpos = self.init_qpos.copy()
         qvel = self.init_qvel.copy()
 
-        # Future:
-        # qpos += self.np_random.uniform(...)
-        # target randomization
-        # object randomization
+        # Define the range for randomization
+        new_x_pos = np.random.uniform(0.5, 0.8)
+        new_y_pos = np.random.uniform(0.5, 0.8)
+        new_z_pos = np.random.uniform(0.1, 1.0)
+
+        # Assign the new target position data for observation
+        new_target_pos = np.array([
+            new_x_pos,
+            new_y_pos,
+            new_z_pos
+        ])
+
+        # Assign the new target site position for visualization
+        target_site_pos = np.array([
+            new_x_pos,
+            new_y_pos,
+            new_z_pos
+        ])
+
+        # Set the new target position in the simulation
+        self.data.site_xpos[self.TARGET_SITE_ID] = new_target_pos
+        self.model.site_pos[self.TARGET_SITE_ID] = target_site_pos
 
         self.set_state(qpos, qvel)
 
@@ -121,6 +149,8 @@ class KukaIiwa14Env(MujocoEnv):
     # --------------------------------------------------
 
     def step(self, action):
+
+        self.step_count += 1
 
         # action = np.clip(
         #     action,
@@ -141,13 +171,18 @@ class KukaIiwa14Env(MujocoEnv):
 
         reward = self.reward(observation)
 
-        terminated = False
+        terminated = self._is_done(observation)
 
-        truncated = False
+        truncated = self.step_count >= self.max_steps
 
         info = self._get_info()
 
-        self.randomize_trg_pos(observation)
+        # Add the reward to the info dict for logging purpose
+        info["reward"] = reward
+
+        info["terminated"] = terminated
+        
+        info["truncated"] = truncated
 
         if self.render_mode == "human":
             self.render()
@@ -179,7 +214,7 @@ class KukaIiwa14Env(MujocoEnv):
             distance = np.linalg.norm(eef_pos - target_pos)
             return (1-distance)
         
-    def randomize_trg_pos(self, obs):
+    def _is_done(self, obs):
         """
         Randomize the target position within a specified range.
         """
@@ -188,27 +223,7 @@ class KukaIiwa14Env(MujocoEnv):
         target_pos = obs[17:20]  # Target position
         distance = np.linalg.norm(eef_pos - target_pos)
 
-        if distance == 0.0:
+        # Indicate an episode is done
+        if distance == 0.0: return True 
         
-          # Define the range for randomization
-          new_x_pos = np.random.uniform(0.5, 0.8)
-          new_y_pos = np.random.uniform(0.5, 0.8)
-          new_z_pos = np.random.uniform(0.1, 1.0)
-  
-          # Assign the new target position data for observation
-          new_target_pos = np.array([
-              new_x_pos,
-              new_y_pos,
-              new_z_pos
-          ])
-
-          # Assign the new target site position for visualization
-          target_site_pos = np.array([
-              new_x_pos,
-              new_y_pos,
-              new_z_pos
-          ])
-  
-          # Set the new target position in the simulation
-          self.data.site_xpos[self.TARGET_SITE_ID] = new_target_pos
-          self.model.site_pos[self.TARGET_SITE_ID] = target_site_pos
+        return False

@@ -12,7 +12,8 @@ load_path = (
 
 env = KukaIiwa14Env(
   render_mode="human", 
-  reward_type="dense"
+  reward_type="dense",
+  episode_len=1024
   )
 
 model = PPO.load(str(load_path))
