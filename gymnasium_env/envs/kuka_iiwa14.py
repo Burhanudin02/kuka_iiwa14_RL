@@ -186,8 +186,9 @@ class KukaIiwa14Env(MujocoEnv):
 
         eef_pos = obs[14:17]  # End-effector position
         target_pos = obs[17:20]  # Target position
+        distance = np.linalg.norm(eef_pos - target_pos)
 
-        if eef_pos == target_pos:
+        if distance == 0.0:
         
           # Define the range for randomization
           new_x_pos = np.random.uniform(0.5, 0.8)

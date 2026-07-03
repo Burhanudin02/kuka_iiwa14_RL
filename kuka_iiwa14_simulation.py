@@ -1,8 +1,17 @@
 import mujoco
 import mujoco.viewer
 import numpy as np
+from pathlib import Path
 
-model = mujoco.MjModel.from_xml_path("/home/host-20-04/mujoco_workspace/kuka_iiwa14_RL/mjcf/kuka_iiwa14_scene.xml")
+project_root = Path(__file__).resolve().parents[0]
+
+mjcf_path = (
+    project_root
+    / "mjcf"
+    / "kuka_iiwa14_scene.xml"
+)
+
+model = mujoco.MjModel.from_xml_path(str(mjcf_path))
 data = mujoco.MjData(model)
 
 reverse = False
