@@ -22,3 +22,6 @@ cd gymnasium_env
 pip install -e .
 ```
 
+## Sources
+
+[MJCF](https://github.com/google-deepmind/mujoco_menagerie/tree/main/kuka_iiwa_14)

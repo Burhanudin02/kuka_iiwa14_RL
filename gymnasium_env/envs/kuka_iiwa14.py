@@ -118,8 +118,8 @@ class KukaIiwa14Env(MujocoEnv):
         qvel = self.init_qvel.copy()
 
         # Define the range for randomization
-        new_x_pos = np.random.uniform(0.5, 0.8)
-        new_y_pos = np.random.uniform(0.5, 0.8)
+        new_x_pos = np.random.uniform(0.5, 0.6)
+        new_y_pos = np.random.uniform(0.5, 0.6)
         new_z_pos = np.random.uniform(0.1, 1.0)
 
         # Assign the new target position data for observation

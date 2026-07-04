@@ -7,20 +7,22 @@ project_root = Path(__file__).resolve().parents[0]
 load_path = (
     project_root
     / "models"
-    / "ppo_kuka_iiwa14"
+    / "ppo_dense_3"
 )
+
+n_steps = 10240
 
 env = KukaIiwa14Env(
   render_mode="human", 
   reward_type="dense",
-  episode_len=1024
+  episode_len=n_steps * 10
   )
 
 model = PPO.load(str(load_path))
 
 obs, info = env.reset()
 
-for i in range(10000):
+for i in range(n_steps*10):
   # Get action from the trained model
   action, _ = model.predict(
     obs, 
