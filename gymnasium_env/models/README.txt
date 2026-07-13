@@ -1,0 +1,1 @@
+ppo_dense_6 udah di train selama 21000 * 10240 step

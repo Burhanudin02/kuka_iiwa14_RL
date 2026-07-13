@@ -1,6 +1,6 @@
 from pathlib import Path
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, CallbackList
 from gymnasium_env.envs.kuka_iiwa14 import KukaIiwa14Env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -12,7 +12,7 @@ save_path = str(
   (
     project_root
     / "models"
-    / "ppo_dense_6"
+    / "ppo_dense_7"
   )
 )
 
@@ -38,6 +38,21 @@ class TensorboardCallback(BaseCallback):
       self.logger.record("episode/truncated", info["truncated"])
 
     return True
+
+
+# Checkpoint callback to save the model at regular intervals
+checkpoint_callback = CheckpointCallback(
+  save_freq = 10240,
+  save_path = (
+    project_root 
+    / "models" 
+    / "checkpoints"
+    ),
+  name_prefix = "ppo_dense"
+)
+
+# Combine the callbacks into a list
+callbacks = CallbackList([checkpoint_callback, TensorboardCallback()])
 
 def main(save_path, log_path):
 
@@ -74,13 +89,13 @@ def main(save_path, log_path):
   #   )
   
   model = PPO.load(
-    "/home/host-20-04/mujoco_workspace/kuka_iiwa14_RL/gymnasium_env/models/ppo_dense_5.zip",
+    "/home/host-20-04/mujoco_workspace/kuka_iiwa14_RL/gymnasium_env/models/ppo_dense_6.zip",
     env=env,
   )
   
   model.learn(
-    total_timesteps=1000*n_steps, 
-    callback=TensorboardCallback()
+    total_timesteps=100*n_steps, 
+    callback=callbacks
     )
   
   model.save(save_path)
