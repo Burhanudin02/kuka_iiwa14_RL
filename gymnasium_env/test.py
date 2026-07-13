@@ -7,7 +7,7 @@ project_root = Path(__file__).resolve().parents[0]
 load_path = (
     project_root
     / "models"
-    / "ppo_dense_3"
+    / "ppo_dense_1"
 )
 
 n_steps = 10240
