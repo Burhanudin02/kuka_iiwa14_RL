@@ -202,15 +202,15 @@ class KukaIiwa14Env(MujocoEnv):
 
         if self.reward_type == "sparse":
             # Sparse reward: +1 if the end-effector is within a threshold distance of the target, else 0
-            eef_pos = obs[14:17]  # End-effector position
-            target_pos = obs[17:20]  # Target position
+            eef_pos = obs[21:24]  # End-effector position
+            target_pos = obs[24:27]  # Target position
             distance = np.linalg.norm(eef_pos - target_pos)
             return 1.0 if distance == 0.0 else 0.0
         
         elif self.reward_type == "dense":
             # Dense reward: negative distance between end-effector and target
-            eef_pos = obs[14:17]  # End-effector position
-            target_pos = obs[17:20]  # Target position
+            eef_pos = obs[21:24]  # End-effector position
+            target_pos = obs[24:27]  # Target position
             distance = np.linalg.norm(eef_pos - target_pos)
             return (1-distance)
         
@@ -219,8 +219,8 @@ class KukaIiwa14Env(MujocoEnv):
         Randomize the target position within a specified range.
         """
 
-        eef_pos = obs[14:17]  # End-effector position
-        target_pos = obs[17:20]  # Target position
+        eef_pos = obs[21:24]  # End-effector position
+        target_pos = obs[24:27]  # Target position
         distance = np.linalg.norm(eef_pos - target_pos)
 
         # Indicate an episode is done
