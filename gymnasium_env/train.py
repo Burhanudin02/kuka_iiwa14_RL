@@ -12,7 +12,7 @@ save_path = str(
   (
     project_root
     / "models"
-    / "ppo_dense_7"
+    / "ppo_dense_1"
   )
 )
 
@@ -80,21 +80,24 @@ def main(save_path, log_path):
   #   episode_len=10 * n_steps
   #   )
   
-  # model = PPO(
-  #   "MlpPolicy", 
-  #   env, 
-  #   verbose=1, 
-  #   tensorboard_log=log_path,
-  #   n_steps=n_steps,
-  #   )
+  model = PPO(
+    "MlpPolicy", 
+    env, 
+    verbose=1, 
+    tensorboard_log=log_path,
+    n_steps=n_steps,
+    device="cpu",
+    )
   
-  model = PPO.load(
-    "/home/host-20-04/mujoco_workspace/kuka_iiwa14_RL/gymnasium_env/models/ppo_dense_6.zip",
-    env=env,
-  )
+  # model = PPO.load(
+  #   "/home/home-server/mujoco_workspace/kuka_iiwa14_RL/gymnasium_env/models/ppo_dense_7.zip",
+  #   env=env,
+  #   tensorboard_log=log_path,
+  #   device="cpu"
+  # )
   
   model.learn(
-    total_timesteps=100*n_steps, 
+    total_timesteps=1000*100*n_steps, 
     callback=callbacks
     )
   

@@ -1,1 +1,2 @@
-ppo_dense_6 udah di train selama 21000 * 10240 step
+ppo_dense_1 udah di train selama (1000 * 100 * 10240) step
+
